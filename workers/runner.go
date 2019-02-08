@@ -1,19 +1,17 @@
 package workers
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
 
-func Go(work func() error, cleanup func() error) *Task {
+func Go(work func(chan bool, chan error), cleanup func() error) *Task {
 	t := &Task{
-		stopChan: make(chan bool),
+		stopChan: make(chan bool, 1),
 		errChan:  make(chan error, 1),
 	}
 	go func() {
 		defer func() {
-			t.wg.Add(1)
 			err := cleanup()
 			if err != nil {
 				select {
@@ -23,30 +21,15 @@ func Go(work func() error, cleanup func() error) *Task {
 			}
 			t.wg.Done()
 		}()
-		for {
-			select {
-			case <-t.stopChan:
-				fmt.Println("Terminating")
-				return
-			default:
-				t.wg.Add(1)
-				err := work()
-				if err != nil {
-					select {
-					case t.errChan <- err:
-					case <-time.Tick(1 * time.Second):
-					}
-				}
-				t.wg.Done()
-			}
-		}
+
+		t.wg.Add(1)
+		work(t.stopChan, t.errChan)
 	}()
 	return t
 }
 
 type Task struct {
 	wg       sync.WaitGroup
-	lock     sync.RWMutex
 	stopChan chan bool
 	errChan  chan error
 	err      error
