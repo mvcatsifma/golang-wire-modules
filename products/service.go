@@ -5,7 +5,7 @@ type Service struct {
 }
 
 type IDbClient interface {
-	Get()
+	Query()
 }
 
 func NewService(client IDbClient) *Service {
@@ -13,5 +13,5 @@ func NewService(client IDbClient) *Service {
 }
 
 func (this *Service) DoGet() {
-	this.dbClient.Get()
+	this.dbClient.Query()
 }

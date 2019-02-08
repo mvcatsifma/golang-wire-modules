@@ -12,10 +12,12 @@ import (
 
 // Injectors from wiring.go:
 
-func InitializeService() *Service {
+func BuildModule() *Module {
 	dbClient := db.NewClient()
 	service := NewService(dbClient)
-	return service
+	api := NewApi(service)
+	module := NewModule(api)
+	return module
 }
 
 // wiring.go:
